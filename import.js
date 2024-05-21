@@ -1,6 +1,5 @@
-const fs = require('fs');
-const readline = require('readline');
-const mysql = require('mysql2/promise');
+const mysql = require('mysql2');
+const {createPool} = require("mysql2");
 
 const dbConfig = {
     host: 'localhost',
@@ -13,23 +12,20 @@ const saveDataToDatabase = async (data) => {
     const connection = await mysql.createConnection(dbConfig);
 
     try {
-        for (const employee of data.Employee) {
-            const { id, name, surname, Department, Salary } = employee;
+        for (const employee of data) {
+            const { id, name, surname, Department, Salary, Donation } = employee;
 
-            // Сохранение департамента
             const department = Department[0];
             await connection.execute(
                 'INSERT INTO Department (id, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)',
                 [department.id, department.name]
             );
 
-            // Сохранение сотрудника
             await connection.execute(
-                'INSERT INTO Employee (id, first_name, last_name, department_id) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE first_name = VALUES(first_name), last_name = VALUES(last_name), department_id = VALUES(department_id)',
+                'INSERT INTO Employee (id, first_name, surname, department_id) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE first_name = VALUES(first_name), surname = VALUES(surname), department_id = VALUES(department_id)',
                 [id, name, surname, department.id]
             );
 
-            // Сохранение зарплат
             for (const salary of Salary) {
                 for (const statement of salary.Statement) {
                     await connection.execute(
@@ -37,6 +33,18 @@ const saveDataToDatabase = async (data) => {
                         [statement.id, id, new Date(statement.date), statement.amount]
                     );
                 }
+            }
+
+            if (!Donation) continue;
+            for (const donation of Donation) {
+                const splitValue = donation.amount.split(' ');
+                const amount = splitValue[0];
+                const currency = splitValue[1];
+
+                await connection.execute(
+                    'INSERT INTO Donation (id, employee_id, date, amount, currency) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE date = VALUES(date), amount = VALUES(amount)',
+                    [donation.id, id, new Date(donation.date),amount, currency]
+                );
             }
         }
 
@@ -48,4 +56,27 @@ const saveDataToDatabase = async (data) => {
     }
 };
 
-export default {saveDataToDatabase};
+const saveRatesToDatabase = async (data) => {
+    const connection = await mysql.createConnection(dbConfig);
+
+    try {
+        for (const rateGroup of data) {
+            for (const rate of rateGroup.Rate) {
+                const { date, sign, value } = rate;
+
+                await connection.execute(
+                    'INSERT INTO Rate (date, currency, rate) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE rate = VALUES(rate)',
+                    [new Date(date), sign, value]
+                );
+            }
+        }
+
+        console.log('Rates data has been successfully saved to the database.');
+    } catch (error) {
+        console.error('Error saving rates data to the database:', error);
+    } finally {
+        await connection.end();
+    }
+};
+
+module.exports = {saveDataToDatabase, saveRatesToDatabase};

@@ -1,5 +1,6 @@
 const fs = require('fs');
 const readline = require('readline');
+const {saveDataToDatabase, saveRatesToDatabase} = require('./import');
 const util = require('util');
 
 // Функция для рекурсивного парсинга сущности
@@ -83,5 +84,11 @@ const parseFile = async (filePath) => {
 (async () => {
     const filePath = './dump.txt'; // Указываем путь к файлу
     const data = await parseFile(filePath); // Парсим файл
-    console.log(util.inspect(data, { depth: null, colors: true })); // Выводим результат в консоль
+
+    const employeeData = data['E-List'][0]['Employee'];
+    const ratesData = data['Rates'];
+    console.log(util.inspect(ratesData, { depth: null, colors: true })); // Выводим результат в консоль
+
+    await saveDataToDatabase(employeeData);
+    // await saveRatesToDatabase(ratesData);
 })();
