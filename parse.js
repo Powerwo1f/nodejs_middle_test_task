@@ -82,13 +82,14 @@ const parseFile = async (filePath) => {
 
 // Основная функция для запуска парсинга и вывода результата
 (async () => {
-    const filePath = './dump.txt'; // Указываем путь к файлу
-    const data = await parseFile(filePath); // Парсим файл
+    const filePath = './dump.txt';
+    const data = await parseFile(filePath);
 
     const employeeData = data['E-List'][0]['Employee'];
     const ratesData = data['Rates'];
-    console.log(util.inspect(ratesData, { depth: null, colors: true })); // Выводим результат в консоль
+
+    // console.log(util.inspect(ratesData, { depth: null, colors: true })); // Выводим результат в консоль
 
     await saveDataToDatabase(employeeData);
-    // await saveRatesToDatabase(ratesData);
+    await saveRatesToDatabase(ratesData);
 })();

@@ -4,9 +4,11 @@
   "description": "A project to import employee data and calculate rewards based on donations",
   "main": "index.js",
   "scripts": {
-    "start": "node parse.js"
+    "parse": "node parse.js",
+    "start": "nodemon index.js"
   },
   "dependencies": {
+    "body-parser": "^1.20.2",
     "express": "^4.17.1",
     "mysql2": "^2.3.3"
   },
